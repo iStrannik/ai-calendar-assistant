@@ -39,7 +39,7 @@ class MLMessager:
     def parse_results(self, text):
         splitted_parts = text.split(self.text_delimeter)
         results = []
-        for texted_funcs in splitted_parts[0].split():
+        for texted_funcs in splitted_parts[0].split("\n"):
             if not any([i in texted_funcs for i in self.function_list]):
                 continue
             visitor = ast_visitor.MyVisitor()
