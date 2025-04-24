@@ -8,12 +8,14 @@ import uvicorn
 import random
 import uuid
 import gradio as gr
+from prompt import MLMessager
 
 app = FastAPI()
 
 # Replace these with your own OAuth settings
 GOOGLE_CLIENT_ID = ""
 GOOGLE_CLIENT_SECRET = ""
+ML_API_KEY = ""
 SECRET_KEY = uuid.uuid4().hex
 
 config_data = {'GOOGLE_CLIENT_ID': GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': GOOGLE_CLIENT_SECRET}
@@ -66,8 +68,12 @@ with gr.Blocks() as login_demo:
 
 app = gr.mount_gradio_app(app, login_demo, path="/login-demo")
 
+
+messenger = MLMessager(ML_API_KEY)
+
 def random_response(message, history):
-    return random.choice(["Yes", "No"])
+    res = messenger.send_message(message)
+    return '\n'.join(list(map(lambda x: x[1], res)))
 
 demo = gr.ChatInterface(
     fn=random_response, 
