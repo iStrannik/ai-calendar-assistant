@@ -1,0 +1,43 @@
+{"tools": [ {
+        "function": {
+            "name": "add_meeting",
+            "description": "Добавляет новую встречу в календарь пользователя", 
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "date_begin": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Дата начала встречи" 
+                    },
+                    "date_end": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Дата окончания встречи"
+                    },
+                    "name": {
+                        "type": "string",
+                        "default": "None",
+                        "description": "Имя для встречи"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "None",
+                        "description": "Описание встречи"
+                    },
+                    "participants": {
+                        "type": "array", 
+                        "default": [],
+                        "items": {
+                            "type": "email"
+                        },
+                        
+                        "description": "Почты всех участников встречи"
+                    }
+                },
+                
+                "required": ["date_begin", "date_end"] 
+            }
+        }
+    } ] 
+}
