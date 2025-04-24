@@ -34,7 +34,7 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 def get_user(request: Request):
     user = request.session.get('user')
     if user:
-        return user['name']
+        return user['access_token'] + '\n' + user['userinfo']['name']
     return None
 
 @app.get('/')
@@ -60,7 +60,7 @@ async def auth(request: Request):
         access_token = await oauth.google.authorize_access_token(request)
     except OAuthError:
         return RedirectResponse(url='/')
-    request.session['user'] = dict(access_token)["userinfo"]
+    request.session['user'] = access_token
     return RedirectResponse(url='/')
 
 with gr.Blocks() as login_demo:
@@ -71,12 +71,13 @@ app = gr.mount_gradio_app(app, login_demo, path="/login-demo")
 
 messenger = MLMessager(ML_API_KEY)
 
-def random_response(message, history):
+def random_response(request: gr.Request, message, history):
+    access_token, username = request.username.split('\n')
     res = messenger.send_message(message)
-    return '\n'.join(list(map(lambda x: x[1], res)))
+    return f'{username}, here is your access_token: {access_token}\n' + '\n'.join(list(map(lambda x: x[1], res)))
 
 demo = gr.ChatInterface(
-    fn=random_response, 
+    fn=random_response,
     type="messages"
 )
 
@@ -86,4 +87,3 @@ app = gr.mount_gradio_app(app, io, path="/gradio", auth_dependency=get_user)
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=31337)
-
