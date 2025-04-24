@@ -6,8 +6,10 @@ from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 import random
+from  google_calendar_api_operations import GoogleCalendarAPIOperationsExecutor
 import uuid
 import gradio as gr
+from ast_visitor import MyVisitor
 from prompt import MLMessager
 
 app = FastAPI()
@@ -71,10 +73,27 @@ app = gr.mount_gradio_app(app, login_demo, path="/login-demo")
 
 messenger = MLMessager(ML_API_KEY)
 
+
+
 def random_response(request: gr.Request, message, history):
     access_token, username = request.username.split('\n')
     res = messenger.send_message(message)
-    return f'{username}, here is your access_token: {access_token}\n' + '\n'.join(list(map(lambda x: x[1], res)))
+    
+    gexec = GoogleCalendarAPIOperationsExecutor(access_token, username)
+
+    function_map = {
+        "add_meeting": gexec.add_meeting,
+        "delete_meeting": gexec.delete_meeting
+    }
+    
+    parsed_result, user_text = messenger.parse_results(res)
+
+    for func_name, args in parsed_result:
+        if func_name in function_map:
+            function_map[func_name](**args)
+    
+    # return f'{username}, here is your access_token: {access_token}\n' + '\n'.join(list(map(lambda x: x[1], res)))
+    return user_text
 
 demo = gr.ChatInterface(
     fn=random_response,
