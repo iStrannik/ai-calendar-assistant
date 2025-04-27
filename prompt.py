@@ -53,4 +53,3 @@ class MLMessager:
             visitor.visit(ast.parse(texted_funcs))
             results.append((visitor.function_name, visitor.args))
         return [results, text_part]
-
