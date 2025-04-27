@@ -8,6 +8,7 @@ import uvicorn
 import random
 from  google_calendar_api_operations import GoogleCalendarAPIOperationsExecutor
 import uuid
+import os
 import gradio as gr
 from ast_visitor import MyVisitor
 from prompt import MLMessager
@@ -15,9 +16,9 @@ from prompt import MLMessager
 app = FastAPI()
 
 # Replace these with your own OAuth settings
-GOOGLE_CLIENT_ID = ""
-GOOGLE_CLIENT_SECRET = ""
-ML_API_KEY = ""
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+ML_API_KEY = os.environ.get('ML_API_KEY')
 SECRET_KEY = uuid.uuid4().hex
 
 config_data = {'GOOGLE_CLIENT_ID': GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': GOOGLE_CLIENT_SECRET}

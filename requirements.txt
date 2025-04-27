@@ -3,3 +3,4 @@ fastapi
 Authlib
 yandex-cloud-ml-sdk
 babel
+itsdangerous
