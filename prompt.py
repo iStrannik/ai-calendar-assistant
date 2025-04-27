@@ -13,7 +13,7 @@ import json
 
 class MLMessager:
 
-    def __init__(self, ML_API_KEY, FOLDER_ID, prompt_filename):
+    def __init__(self, ML_API_KEY, FOLDER_ID='b1gchtt7deu2tqjq9l39', prompt_filename='./base_prompt.ru.md'):
         self.ML_API_KEY = ML_API_KEY
         self.functions_delimeter = '```'
         self.text_delimeter = "====================="
