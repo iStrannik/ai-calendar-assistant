@@ -2,13 +2,13 @@ import os
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import FastAPI, Depends, Request
 from starlette.config import Config
+from google.oauth2.credentials import Credentials
 from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 import random
 from  google_calendar_api_operations import GoogleCalendarAPIOperationsExecutor
 import uuid
-import os
 import gradio as gr
 from ast_visitor import MyVisitor
 from prompt import MLMessager
@@ -16,9 +16,9 @@ from prompt import MLMessager
 app = FastAPI()
 
 # Replace these with your own OAuth settings
-GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-ML_API_KEY = os.environ.get('ML_API_KEY')
+GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_SECRET = ""
+ML_API_KEY = ""
 SECRET_KEY = uuid.uuid4().hex
 
 config_data = {'GOOGLE_CLIENT_ID': GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': GOOGLE_CLIENT_SECRET}
@@ -36,8 +36,9 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 # Dependency to get the current user
 def get_user(request: Request):
     user = request.session.get('user')
+    # print(user)
     if user:
-        return user['access_token'] + '\n' + user['userinfo']['name']
+        return user['access_token'] + '\n' + user['userinfo']['name'] + '\n' + user['userinfo']['email']
     return None
 
 @app.get('/')
@@ -55,15 +56,21 @@ async def logout(request: Request):
 @app.route('/login')
 async def login(request: Request):
     redirect_uri = 'https://ai-calendar-assistant.ru/auth'
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    tmp = await oauth.google.authorize_redirect(request, redirect_uri, access_type='offline')
+    print(tmp)
+    return tmp
 
 @app.route('/auth')
 async def auth(request: Request):
     try:
         access_token = await oauth.google.authorize_access_token(request)
+        # print(access_token)
     except OAuthError:
         return RedirectResponse(url='/')
     request.session['user'] = access_token
+    
+    
+    
     return RedirectResponse(url='/')
 
 with gr.Blocks() as login_demo:
@@ -77,24 +84,38 @@ messenger = MLMessager(ML_API_KEY)
 
 
 def random_response(request: gr.Request, message, history):
-    access_token, username = request.username.split('\n')
+    print(request.session)
+    
+    access_token, username, mail = request.username.split('\n')
     res = messenger.send_message(message)
     
-    gexec = GoogleCalendarAPIOperationsExecutor(access_token, username)
+    print(res)
+        
+    # access_token = session['user']['access_token']
+    creds = Credentials(token=access_token, client_secret=GOOGLE_CLIENT_SECRET, client_id=GOOGLE_CLIENT_ID, refresh_token=None)
+    gexec = GoogleCalendarAPIOperationsExecutor(creds, mail)
 
     function_map = {
         "add_meeting": gexec.add_meeting,
         "delete_meeting": gexec.delete_meeting
     }
+    print(res[0][0])
+    # parsed_result, user_text = messenger.parse_results(res[0][1])
     
-    parsed_result, user_text = messenger.parse_results(res)
+    print("[DEBUG] -----------------------")
+    # print(parsed_result, user_text)
+    
+    parsed_result = res[0][0]
+    user_text = res[0][1]
+    print(parsed_result)
 
     for func_name, args in parsed_result:
         if func_name in function_map:
+            print(func_name, args)
             function_map[func_name](**args)
     
-    # return f'{username}, here is your access_token: {access_token}\n' + '\n'.join(list(map(lambda x: x[1], res)))
-    return user_text
+    return f'{username} and {mail}, here is your access_token: {access_token}\n' + '\n'.join(list(map(lambda x: x[1], res)))
+    # return request
 
 demo = gr.ChatInterface(
     fn=random_response,

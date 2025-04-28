@@ -17,7 +17,8 @@ class GoogleCalendarAPIOperationsExecutor:
         }
 
         # Call the Calendar API
-        event = self.client.events().insert(calendarId=self.calendar_id, body=event).execute()
+        event = self.client.events().insert(calendarId='primary', body=event).execute()
+        print(event)
         print(f"Event created: {event.get('htmlLink')}")
 
     def delete_meeting(self, name):
