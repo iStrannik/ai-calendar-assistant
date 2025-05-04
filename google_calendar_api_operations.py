@@ -11,8 +11,12 @@ class GoogleCalendarAPIOperationsExecutor:
         'summary': name,
         'location': 'Default location',
         'description': description,
-        'start': date_begin,
-        'end': date_end,
+        'start': {
+            "dateTime": date_begin,
+            "timeZone": "Europe/Moscow"},
+        'end': {
+            "dateTime": date_end, 
+            "timeZone": "Europe/Moscow"},
         'attendees': participants,
         }
 

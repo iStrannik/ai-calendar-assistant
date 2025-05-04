@@ -64,7 +64,7 @@ async def login(request: Request):
 async def auth(request: Request):
     try:
         access_token = await oauth.google.authorize_access_token(request)
-        # print(access_token)
+        print(access_token)
     except OAuthError:
         return RedirectResponse(url='/')
     request.session['user'] = access_token
