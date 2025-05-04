@@ -6,7 +6,6 @@ from google.oauth2.credentials import Credentials
 from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
-import random
 from  google_calendar_api_operations import GoogleCalendarAPIOperationsExecutor
 import uuid
 import gradio as gr
@@ -83,7 +82,7 @@ messenger = MLMessager(ML_API_KEY)
 
 
 
-def random_response(request: gr.Request, message, history):
+def response(request: gr.Request, message, history):
     print(request.session)
     
     access_token, username, mail = request.username.split('\n')
@@ -97,7 +96,9 @@ def random_response(request: gr.Request, message, history):
 
     function_map = {
         "add_meeting": gexec.add_meeting,
-        "delete_meeting": gexec.delete_meeting
+        "delete_meeting": gexec.delete_meeting,
+        "find_slots": gexec.find_slots,
+        "change_meeting": gexec.change_meeting
     }
     print(res[0][0])
     # parsed_result, user_text = messenger.parse_results(res[0][1])
@@ -118,7 +119,7 @@ def random_response(request: gr.Request, message, history):
     # return request
 
 demo = gr.ChatInterface(
-    fn=random_response,
+    fn=response,
     type="messages"
 )
 
