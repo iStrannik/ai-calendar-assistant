@@ -1,5 +1,6 @@
 from googleapiclient.discovery import build
 from datetime import datetime
+from babel.dates import format_datetime
 import pytz
 
 class GoogleCalendarAPIOperationsExecutor:
@@ -54,45 +55,73 @@ class GoogleCalendarAPIOperationsExecutor:
             print(f"Event {event['summary']} (ID: {event['id']}) deleted")
 
     def find_slots(self, date_begin, date_end):
-    	tz = pytz.timezone(self.timezone)
-    	date_begin_with_tz = datetime.fromisoformat(date_begin).astimezone(tz)
-    	date_end_with_tz = datetime.fromisoformat(date_end).astimezone(tz)
-    	
+        tz = pytz.timezone(self.timezone)
+
+        # Parse input and attach timezone (assumes input is naive ISO string)
+        date_begin_dt = tz.localize(datetime.fromisoformat(date_begin))
+        date_end_dt = tz.localize(datetime.fromisoformat(date_end))
+
         # Query freebusy API
         freebusy_query = {
-            "timeMin": date_begin_with_tz.isoformat(),
-            "timeMax": date_end_with_tz.isoformat(),
+            "timeMin": date_begin_dt.isoformat(),
+            "timeMax": date_end_dt.isoformat(),
             "items": [{"id": "primary"}],
             "timeZone": self.timezone
         }
-        
+
         freebusy_result = self.client.freebusy().query(body=freebusy_query).execute()
         busy_periods = freebusy_result['calendars']['primary']['busy']
 
-        # Get start and end of all busy periods
+        # Convert busy slots to datetime with timezone
         busy_slots = []
         for busy_period in busy_periods:
-            busy_period_start = datetime.fromisoformat(busy_period['start'])
-            busy_period_end = datetime.fromisoformat(busy_period['end'])
-            busy_slots.append((busy_period_start, busy_period_end))
+            busy_start = datetime.fromisoformat(busy_period['start'])
+            busy_end = datetime.fromisoformat(busy_period['end'])
 
-        # Get free slots from busy slots list
-        initial_free_slots = [(datetime.fromisoformat(date_begin), datetime.fromisoformat(date_end))]
-        free_slots = initial_free_slots
-        for busy_slot in busy_slots:
-            busy_slot_start, busy_slot_end = busy_slot
-            for i in range(len(free_slots)):
-                if free_slots[i][0] < busy_slot_start < free_slots[i][1] and free_slots[i][0] < busy_slot_end < free_slots[i][1]:
-                    new_free_slots = free_slots[:i] + [(free_slots[i][0], busy_slot_start), (busy_slot_end, free_slots[i][1])] + (free_slots[i+1:] if i != len(free_slots)-1 else [])
-                    break
-                elif free_slots[i][0] < busy_slot_start < free_slots[i][1]:
-                    new_free_slots = free_slots[:i] + [(free_slots[i][0], busy_slot_start)] + (free_slots[i+1:] if i != len(free_slots)-1 else [])
-                elif free_slots[i][0] < busy_slot_end < free_slots[i][1]:
-                    new_free_slots = free_slots[:i] + [(busy_slot_end, free_slots[i][1])] + (free_slots[i+1:] if i != len(free_slots)-1 else [])
-            free_slots = new_free_slots
+            # Convert to same timezone if not already
+            if busy_start.tzinfo is None:
+                busy_start = tz.localize(busy_start)
+            else:
+                busy_start = busy_start.astimezone(tz)
 
-        print(f"Free slots between {datetime.fromisoformat(date_begin)} and {datetime.fromisoformat(date_end)}: {free_slots}")
-        return f"Free slots between {datetime.fromisoformat(date_begin)} and {datetime.fromisoformat(date_end)}: {free_slots}"
+            if busy_end.tzinfo is None:
+                busy_end = tz.localize(busy_end)
+            else:
+                busy_end = busy_end.astimezone(tz)
+
+            busy_slots.append((busy_start, busy_end))
+
+        # Initial free time
+        free_slots = [(date_begin_dt, date_end_dt)]
+
+        for busy_start, busy_end in busy_slots:
+            updated_slots = []
+            for slot_start, slot_end in free_slots:
+                if slot_start < busy_start < slot_end and slot_start < busy_end < slot_end:
+                    updated_slots.extend([(slot_start, busy_start), (busy_end, slot_end)])
+                elif slot_start < busy_start < slot_end:
+                    updated_slots.append((slot_start, busy_start))
+                elif slot_start < busy_end < slot_end:
+                    updated_slots.append((busy_end, slot_end))
+                elif busy_start <= slot_start and slot_end <= busy_end:
+                    # Whole slot is busy — remove it
+                    continue
+                else:
+                    updated_slots.append((slot_start, slot_end))
+            free_slots = updated_slots
+            
+        readable_slots = [
+            f"{format_datetime(slot_start, format='d MMMM HH:mm', locale='ru_RU')}–{format_datetime(slot_end, format='HH:mm', locale='ru_RU')}"
+            for slot_start, slot_end in free_slots
+        ]
+
+        result = "Свободные слоты:\n" + "\n".join(readable_slots)
+        print(result)
+        return result
+
+        # print(f"Free slots between {date_begin_dt} and {date_end_dt}: {free_slots}")
+        # return f"Free slots between {date_begin_dt} and {date_end_dt}: {free_slots}"
+
 
     def change_meeting(self, name, description=None, date_begin=None, date_end=None, participants=None):
         # List existing events in the calendar
