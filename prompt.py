@@ -46,6 +46,7 @@ class MLMessager:
         func_part = text[text.find(self.text_delimeter + "\n") + len(self.text_delimeter) + 1: text.rfind(self.text_delimeter + "\n")]
         text_part = text[text.rfind(self.text_delimeter + "\n") + len(self.text_delimeter) + 1:]
         results = []
+        # print(text)
         for texted_funcs in func_part.split("\n"):
             if not any([i in texted_funcs for i in self.function_list]):
                 continue
