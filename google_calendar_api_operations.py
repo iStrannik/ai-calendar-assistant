@@ -1,27 +1,30 @@
 from googleapiclient.discovery import build
 from datetime import datetime
+import pytz
 
 class GoogleCalendarAPIOperationsExecutor:
-    def __init__(self, creds, calendar_id):
+    def __init__(self, creds, calendar_id, timezone):
         self.creds = creds
         self.calendar_id = calendar_id
+        self.timezone = timezone
         self.default_meeting_name = "Default meeting name created by AI Agent"
-        self.default_description = "Default description of meeting created by AI Agent"
-        self.default_participants = []
+        self.default_meeting_location = "Default meeting location created by AI Agent"
+        self.default_meeting_description = "Default description of meeting created by AI Agent"
+        self.default_meeting_participants = []
         self.client = build('calendar', 'v3', credentials=self.creds)
 
     def add_meeting(self, date_begin, date_end, name=None, description=None, participants=None):
         event = {
         'summary': name if name != None else self.default_meeting_name,
-        'location': 'Default location',
-        'description': description if description != None else self.default_description,
+        'location': self.default_meeting_location,
+        'description': description if description != None else self.default_meeting_description,
         'start': {
             "dateTime": date_begin,
-            "timeZone": "Europe/Moscow"},
+            "timeZone": self.timezone},
         'end': {
             "dateTime": date_end, 
-            "timeZone": "Europe/Moscow"},
-        'attendees': participants if participants != None else self.default_participants,
+            "timeZone": self.timezone},
+        'attendees': participants if participants != None else self.default_meeting_participants,
         }
 
         # Call the Calendar API
@@ -51,12 +54,16 @@ class GoogleCalendarAPIOperationsExecutor:
             print(f"Event {event['summary']} (ID: {event['id']}) deleted")
 
     def find_slots(self, date_begin, date_end):
+    	tz = pytz.timezone(self.timezone)
+    	date_begin_with_tz = datetime.fromisoformat(date_begin).astimezone(tz)
+    	date_end_with_tz = datetime.fromisoformat(date_end).astimezone(tz)
+    	
         # Query freebusy API
         freebusy_query = {
-            "timeMin": date_begin,
-            "timeMax": date_end,
+            "timeMin": date_begin_with_tz.isoformat(),
+            "timeMax": date_end_with_tz.isoformat(),
             "items": [{"id": "primary"}],
-            "timeZone": "Europe/Moscow"
+            "timeZone": self.timezone
         }
         
         freebusy_result = self.client.freebusy().query(body=freebusy_query).execute()

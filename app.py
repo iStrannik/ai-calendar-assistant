@@ -169,7 +169,7 @@ def response(request: gr.Request, message, history):
         
     # access_token = session['user']['access_token']
     creds = Credentials(token=access_token, client_secret=GOOGLE_CLIENT_SECRET, client_id=GOOGLE_CLIENT_ID, refresh_token=None)
-    gexec = GoogleCalendarAPIOperationsExecutor(creds, mail)
+    gexec = GoogleCalendarAPIOperationsExecutor(creds, mail, "Europe/Moscow")
 
     function_map = {
         "add_meeting": gexec.add_meeting,
