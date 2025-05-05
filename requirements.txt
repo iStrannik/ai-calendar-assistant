@@ -4,3 +4,5 @@ Authlib
 yandex-cloud-ml-sdk
 babel
 itsdangerous
+google-auth
+google-api-python-client 

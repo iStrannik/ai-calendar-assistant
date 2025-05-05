@@ -102,10 +102,14 @@ def response(request: gr.Request, message, history):
         "find_slots": gexec.find_slots,
         "change_meeting": gexec.change_meeting
     }
-   
+    comment = res[0][1]
     for func_call in res[0][0]:
-        function_map[func_call[0]](**func_call[1])
-    return res[0][0][1]
+        res_func = function_map[func_call[0]](**func_call[1])
+        comment += "\n"
+        if res_func is None:
+            continue
+        comment += res_func
+    return comment
     # return f'{username} and {mail}, here is your access_token: {access_token}\n' + '\n'.join(list(map(lambda x: x[1], res)))
     # return request
 
