@@ -16,9 +16,9 @@ from prompt import MLMessager
 app = FastAPI()
 
 # Replace these with your own OAuth settings
-GOOGLE_CLIENT_ID = ""
-GOOGLE_CLIENT_SECRET = ""
-ML_API_KEY = ""
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID") or ""
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET") or ""
+ML_API_KEY = os.environ.get("ML_API_KEY") or ""
 SECRET_KEY = uuid.uuid4().hex
 
 config_data = {'GOOGLE_CLIENT_ID': GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': GOOGLE_CLIENT_SECRET}

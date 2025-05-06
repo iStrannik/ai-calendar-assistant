@@ -4,6 +4,6 @@ services:
     ports:
       - "31337:31337"
     environment:
-      - GOOGLE_CLIENT_ID=827528988869-sr9dn3o47k29543t0p332gs0hqgrk4jl.apps.googleusercontent.com
-      - GOOGLE_CLIENT_SECRET=PATCHED
-      - ML_API_KEY=PATCHED
+      - GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+      - ML_API_KEY=$ML_API_KEY
